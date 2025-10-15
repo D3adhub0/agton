@@ -1,0 +1,85 @@
+# =====================================
+# Python bytecode / cache
+# =====================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =====================================
+# Build / packaging artifacts
+# =====================================
+*.egg-info/
+*.egg
+*.eggs/
+build/
+dist/
+.wheelhouse/
+
+# =====================================
+# Virtual environments
+# =====================================
+.venv/
+venv/
+env/
+ENV/
+.conda/
+.mypy_cache/
+.pytype/
+.dmypy.json
+
+# =====================================
+# IDE / editor configs
+# =====================================
+.vscode/
+.idea/
+.spyproject/
+*.sublime-project
+*.sublime-workspace
+
+# =====================================
+# Test / coverage outputs
+# =====================================
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.cache/
+
+# =====================================
+# OS / misc files
+# =====================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.bak
+*.tmp
+*.log
+
+# =====================================
+# Distribution-specific dirs
+# =====================================
+# Each subproject may have its own build/egg-info/dist
+**/build/
+**/dist/
+**/*.egg-info/
+
+# =====================================
+# Packaging helper / local artifacts
+# =====================================
+pip-wheel-metadata/
+MANIFEST
+*.manifest
+*.spec
+
+# =====================================
+# MyPy / static analysis
+# =====================================
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pyright/
+
+main.py
