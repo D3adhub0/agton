@@ -29,7 +29,7 @@ class Slice:
     def to_cell(self) -> Cell:
         return Cell(
             data=frozenbitarray(self.c.data[self.ld:self.rd]),
-            refs=self.c.refs[self.lr:self.ld],
+            refs=self.c.refs[self.lr:self.rr],
             special=False
         )
     
