@@ -66,7 +66,11 @@ class WalletV3R2(Contract):
 
     MessageWithMode = tuple[MessageRelaxed, int]
 
-    def create_signed_external(self, messages_with_modes: Iterable[MessageWithMode], valid_until: int, seqno: int) -> Message:
+    def create_signed_external(self, 
+                               messages_with_modes: Iterable[MessageWithMode],
+                               valid_until: int,
+                               seqno: int,
+                               use_dummy_private_key: bool = False) -> Message:
         messages_with_modes = tuple(messages_with_modes)
         if len(messages_with_modes) > 4:
             raise ValueError('WalletV3R2 supports only up to 4 messages')
@@ -82,7 +86,8 @@ class WalletV3R2(Contract):
             .store_uint(seqno, 32)
             .store_builder(packed_messages)
         )
-        signature = unsigned_body.end_cell().sign(self.private_key)
+        key = bytes([0] * 32) if use_dummy_private_key else self.private_key
+        signature = unsigned_body.end_cell().sign(key)
         signed_body = (
             begin_cell()
             .store_bytes(signature)
