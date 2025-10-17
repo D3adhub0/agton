@@ -17,25 +17,30 @@ def encode(roots: Sequence[Cell],
     if with_crc or with_index or with_cache or with_top_hash or with_int_hashes:
         raise NotImplementedError
 
-    index: dict[Cell, int] = dict()
+    visited: set[Cell] = set()
     order: list[Cell] = []
     def dfs(c: Cell):
-        if c in index:
+        if c in visited:
             return
-        index[c] = len(index)
+        visited.add(c)
         for r in c.refs:
             dfs(r)
         order.append(c)
     for c in roots:
         dfs(c)
 
+    order.reverse()
+    index: dict[Cell, int] = dict()
+    for i, c in enumerate(order):
+        index[c] = i
+    
     n = len(index)
 
     cell_size_bits = n.bit_length()
     cell_size_bytes = (cell_size_bits + 7) // 8
 
     payload = bytearray()
-    for c in reversed(order):
+    for c in order:
         payload.extend(c._get_descriptors())
         payload.extend(c._get_data_bytes())
         for r in c.refs:
