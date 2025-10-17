@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import overload
+
 from agton.ton import Contract, Provider, Address, MsgAddressInt, Slice, Cell
 
 from ..types import SwapStep
@@ -29,6 +31,12 @@ class Factory(Contract):
             case _:
                 raise TypeError(f'Unexpected result for get_vault_address: {s!r}')
 
+    @overload
+    def get_vault(self, asset: Native) -> NativeVault: ...
+
+    @overload
+    def get_vault(self, asset: Jetton) -> JettonVault: ...
+    
     def get_vault(self, asset: Asset) -> NativeVault | JettonVault:
         address = self.get_vault_address(asset)
         match asset:
