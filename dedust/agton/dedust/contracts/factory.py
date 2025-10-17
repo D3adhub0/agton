@@ -18,14 +18,7 @@ class Factory(Contract):
     def from_mainnet(cls, provider: Provider) -> Factory:
         a = Address.parse('EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67')
         return cls(provider, a)
-    
-    def pack_swap_step(self,
-                       limit: int,
-                       next: SwapStep | None = None,
-                       kind: SwapKind = GivenIn()) -> SwapStep:
-        swap_step_params = SwapStepParams(kind, limit, next)
-        return SwapStep(self.address, swap_step_params)
-    
+
     def get_vault_address(self, asset: Asset) -> MsgAddressInt:
         s = self.run_get_method('get_vault_address', [asset.to_slice()])
         match s:

@@ -1,13 +1,8 @@
 from dataclasses import dataclass
 from typing import Self
 
-from agton.dedust.types.pool_params import PoolParams
-from agton.dedust.types.swap_params import SwapParams
-from agton.dedust.types.swap_step import SwapStep
-from agton.ton.cell.builder import Builder
-from agton.ton.cell.slice import Slice
-from agton.ton.cell.cell import Cell
-from agton.ton.types.tlb import TlbConstructor
+from agton.dedust.types import PoolParams
+from agton.ton import Cell, Slice, Builder, TlbConstructor, begin_cell
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,8 +29,32 @@ class DepositLiquidity(TlbConstructor):
 
     @classmethod
     def deserialize_fields(cls, s: Slice) -> Self:
-        raise NotImplementedError
+        query_id = s.load_uint(64)
+        amount = s.load_coins()
+        pool_params = s.load_tlb(PoolParams)
+        deposit = s.load_ref().begin_parse()
+        min_lp_amount = deposit.load_coins()
+        asset0_target_balance = deposit.load_coins()
+        asset1_target_balance = deposit.load_coins()
+        fulfill_payload = s.load_maybe_ref()
+        reject_payload = s.load_maybe_ref()
+        return cls(query_id, amount, pool_params, min_lp_amount,
+                   asset0_target_balance, asset1_target_balance,
+                   fulfill_payload, reject_payload)
 
     def serialize_fields(self, b: Builder) -> Builder:
-        raise NotImplementedError
-
+        return (
+            b
+            .store_uint(self.query_id, 64)
+            .store_coins(self.amount)
+            .store_tlb(self.pool_params)
+            .store_ref(
+                begin_cell()
+                .store_coins(self.min_lp_amount)
+                .store_coins(self.asset0_target_balance)
+                .store_coins(self.asset1_target_balance)
+                .end_cell()
+            )
+            .store_maybe_ref(self.fulfill_payload)
+            .store_maybe_ref(self.reject_payload)
+        )

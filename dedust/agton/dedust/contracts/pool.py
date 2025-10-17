@@ -1,10 +1,10 @@
-from agton.ton import Contract
+from agton.jetton import JettonMaster
 
 from ..types import SwapStep
 from ..types import SwapStepParams
 from ..types import SwapKind, GivenIn
 
-class Pool(Contract):
+class Pool(JettonMaster):
     def pack_swap_step(self,
                        limit: int,
                        next: SwapStep | None = None,
