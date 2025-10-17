@@ -47,6 +47,8 @@ class MessageRelaxed(TlbConstructor):
         body_in_ref = s.load_bit()
         if body_in_ref:
             body = s.load_ref()
+        else:
+            body = s.load_cell()
         return cls(info, init, body)
 
     def serialize_fields(self, b: Builder) -> Builder:
