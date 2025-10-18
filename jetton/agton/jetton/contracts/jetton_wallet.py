@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from agton.ton import Contract, MsgAddress, Cell, Slice, MessageRelaxed, CurrencyCollection
-from agton.jetton.messages import JettonTransfer
+from agton.ton import Contract, MsgAddress, Cell, Slice, MessageRelaxed, CurrencyCollection, to_nano
+from agton.jetton.messages import JettonTransfer, JettonBurn
 
 @dataclass(frozen=True, slots=True)
 class JettonWalletData:
@@ -45,4 +45,18 @@ class JettonWallet(Contract):
         return self.create_internal_message(
             value=value,
             body=body.to_cell(),
+        )
+    
+    def create_jetton_burn(self, *,
+                           query_id: int,
+                           amount: int,
+                           response_destination: MsgAddress,
+                           value: int | CurrencyCollection = to_nano(0.5),
+                           custom_payload: Cell | None = None) -> MessageRelaxed:
+        body = JettonBurn(
+            query_id, amount, response_destination, custom_payload
+        )
+        return self.create_internal_message(
+            value=value,
+            body=body.to_cell()
         )
