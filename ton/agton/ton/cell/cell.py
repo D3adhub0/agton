@@ -261,7 +261,7 @@ class Cell:
         elif self.type == CellType.merkle_update:
             desc = '* Merkle Update '
         elif self.type == CellType.library_ref:
-            desc = '* Lirary Ref '
+            desc = '* Library Ref '
         return desc
 
     def dump(self, d: int = 0, comma: bool = False) -> str:
