@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Self
 
-from agton.ton import Slice, Builder, MsgAddressInt, MsgAddress
+from agton.ton import Slice, Builder, MsgAddressInt, MsgAddress, begin_cell
 from agton.ton import TlbConstructor
-from .types.asset import Asset
+from .types.asset import Asset, asset
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,10 +30,36 @@ class Swap(TlbConstructor):
 
     @classmethod
     def deserialize_fields(cls, s: Slice) -> Swap:
-        raise NotImplementedError
+        asset_in = s.load_tlb(asset)
+        asset_out = s.load_tlb(asset)
+        amount_in = s.load_coins()
+        amount_out = s.load_coins()
+        s = s.load_ref().begin_parse()
+        sender_addr = s.load_msg_address_int()
+        referral_addr = s.load_msg_address()
+        reserve0 = s.load_coins()
+        reserve1 = s.load_coins()
+        return cls(
+            asset_in, asset_out, amount_in, amount_out,
+            sender_addr, referral_addr, reserve0, reserve1
+        )
 
     def serialize_fields(self, b: Builder) -> Builder:
-        raise NotImplementedError
+        return (
+            b
+            .store_tlb(self.asset_in)
+            .store_tlb(self.asset_out)
+            .store_coins(self.amount_in)
+            .store_coins(self.amount_out)
+            .store_ref(
+                begin_cell()
+                .store_msg_address_int(self.sender_addr)
+                .store_msg_address(self.referral_addr)
+                .store_coins(self.reserve0)
+                .store_coins(self.reserve1)
+                .end_cell()
+            )
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,10 +81,24 @@ class Deposit(TlbConstructor):
 
     @classmethod
     def deserialize_fields(cls, s: Slice) -> Self:
-        raise NotImplementedError
+        sender_addr = s.load_msg_address_int()
+        amount0 = s.load_coins()
+        amount1 = s.load_coins()
+        reserve0 = s.load_coins()
+        reserve1 = s.load_coins()
+        liquidity = s.load_coins()
+        return cls(sender_addr, amount0, amount1, reserve0, reserve1, liquidity)
 
     def serialize_fields(self, b: Builder) -> Builder:
-        raise NotImplementedError
+        return (
+            b
+            .store_msg_address_int(self.sender_addr)
+            .store_coins(self.amount0)
+            .store_coins(self.amount1)
+            .store_coins(self.reserve0)
+            .store_coins(self.reserve1)
+            .store_coins(self.liquidity) 
+        )
 
 
 @dataclass(frozen=True)
@@ -81,10 +121,25 @@ class Withdrawal(TlbConstructor):
 
     @classmethod
     def deserialize_fields(cls, s: Slice) -> Self:
-        raise NotImplementedError
+        sender_addr = s.load_msg_address_int()
+        liquidity = s.load_coins()
+        amount0 = s.load_coins()
+        amount1 = s.load_coins()
+        reserve0 = s.load_coins()
+        reserve1 = s.load_coins()
+        return cls(sender_addr, liquidity, amount0, amount1, reserve0, reserve1)
 
     def serialize_fields(self, b: Builder) -> Builder:
-        raise NotImplementedError
+        return (
+            b
+            .store_msg_address_int(self.sender_addr)
+            .store_coins(self.liquidity)
+            .store_coins(self.amount0)
+            .store_coins(self.amount1)
+            .store_coins(self.reserve0)
+            .store_coins(self.reserve1)
+        )
+
 
 Event = Swap | Deposit | Withdrawal
 
