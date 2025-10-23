@@ -63,7 +63,7 @@ class StateInit(TlbConstructor):
     @classmethod
     def deserialize_fields(cls, s: Slice) -> Self:
         fixed_prefix_length = s.load_uint(5) if s.load_bit() else None
-        special = s.load_tlb(TickTock)
+        special = s.load_maybe_tlb(TickTock)
         code = s.load_maybe_ref()
         data = s.load_maybe_ref()
         library = s.load_maybe_ref()
