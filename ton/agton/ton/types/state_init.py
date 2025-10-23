@@ -43,7 +43,7 @@ class StateInit(TlbConstructor):
     library: Cell | None = None
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int] | None:
         return None
 
     def serialize_fields(self, b: Builder | None = None) -> Builder:
