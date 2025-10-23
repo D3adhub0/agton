@@ -72,6 +72,8 @@ class Slice:
     
     def starts_with(self, b: BitString) -> bool:
         n = len(b)
+        if n > self.remaining_bits:
+            return False
         return self.preload_bits(n) == b
 
     def skip_bits(self, n: int) -> Self:
