@@ -42,7 +42,7 @@ def encode(roots: Sequence[Cell],
 
     payload = bytearray()
     for c in order:
-        payload.extend(c._get_descriptors())
+        payload.extend(c._get_descriptors(c.level))
         payload.extend(c._get_data_bytes())
         for r in c.refs:
             payload.extend(index[r].to_bytes(cell_size_bytes, 'big'))

@@ -94,14 +94,12 @@ class Cell(ABC):
             raise ValueError(f'Expected exactly one root in BoC, but {len(roots)} found')
         return roots[0]
     
-    def begin_parse(self, allow_exotic: bool = False) -> Slice:
+    def begin_parse(self) -> Slice:
         from .slice import Slice
-        if not allow_exotic and self.special:
-            raise ValueError('Cannot parse exotic cell, use allow_exotic=True if you want to parse exotic internals')
         return Slice(self, 0, len(self.data), 0, len(self.refs))
     
-    def to_slice(self, allow_exotic: bool = False):
-        return self.begin_parse(allow_exotic)
+    def to_slice(self):
+        return self.begin_parse()
     
     def to_builder(self) -> Builder:
         from .builder import Builder
@@ -117,6 +115,17 @@ class Cell(ABC):
     
     def verify(self, signature: bytes, public_key: bytes) -> bool:
         return verify(self.hash(), signature, public_key)
+    
+    def prune(self) -> PrunedBranchCell:
+        hashes: list[bytes] = []
+        depths: list[int] = []
+        for l in range(self.level + 1):
+            hashes.append(self.hash(l))
+            depths.append(self.depth(l))
+        return PrunedBranchCell(hashes, depths)
+    
+    def prove(self) -> MerkleProofCell:
+        return MerkleProofCell(self.hash(), self.depth(), self)
 
     @abstractmethod
     def _type_name(self) -> str: ...

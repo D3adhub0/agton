@@ -128,12 +128,6 @@ class Builder:
             self.store_bit(0)
             return self
         return self.store_hashmap(h)
-
-    def store_builder(self, b: Builder) -> Self:
-        self.store_bits(b.data)
-        for c in b.refs:
-            self.store_ref(c)
-        return self
     
     def store_tlb(self, o: TlbConstructor) -> Builder:
         return o.serialize(self)
@@ -168,9 +162,19 @@ class Builder:
         self.store_bit(1)
         return self.store_ref(c)
     
+    def store_cell(self, c: Cell) -> Self:
+        if c.special:
+            raise ValueError('Cannot store special cell')
+        self.store_bits(c.data)
+        for r in c.refs:
+            self.store_ref(r)
+        return self
+
+    def store_builder(self, b: Builder) -> Self:
+        return self.store_cell(b.end_cell())
+
     def store_slice(self, s: Slice) -> Self:
-        b = s.to_cell().to_builder()
-        return self.store_builder(b)
+        return self.store_cell(s.to_cell())
 
 def begin_cell() -> Builder:
     return Builder()
