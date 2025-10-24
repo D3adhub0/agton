@@ -157,7 +157,7 @@ class Cell(ABC):
     def __repr__(self) -> str:
         desc = ''
         if self.special:
-            desc = '* ' + self._type_name()
+            desc = '* ' + self._type_name() + ' '
         return f"Cell({desc}{len(self.data)}[{self.data.tobytes().hex().upper()}] -> {len(self.refs)} refs)"
 
     def __str__(self) -> str:
