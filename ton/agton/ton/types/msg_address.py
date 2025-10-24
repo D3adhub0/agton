@@ -200,7 +200,7 @@ class AddrStd(TlbConstructor):
         )
 
     def __repr__(self) -> str:
-        return f'Address({self.raw()})'
+        return f'Address({self.format()})'
     
     def __str__(self) -> str:
         return self.format()
