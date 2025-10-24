@@ -125,7 +125,9 @@ class Cell(ABC):
         return PrunedBranchCell(hashes, depths)
     
     def prove(self) -> MerkleProofCell:
-        return MerkleProofCell(self.hash(), self.depth(), self)
+        if self.level == 0:
+            return MerkleProofCell(self.hash(self.level), self.depth(self.level), self)
+        return MerkleProofCell(self.hash(self.level - 1), self.depth(self.level - 1), self)
 
     @abstractmethod
     def _type_name(self) -> str: ...
