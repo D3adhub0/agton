@@ -353,7 +353,7 @@ class MerkleProofCell(Cell):
                 hasher.update(c.hash(l + 1))
             depth = 0
             for c in self.refs:
-                depth = max(depth, c.depth(l) + 1)
+                depth = max(depth, c.depth(l + 1) + 1)
             if depth > Cell.MAX_DEPTH:
                 raise ValueError(f'Cell exceeded depth limit: {depth} > {Cell.MAX_DEPTH}')
             self.hashes.append(hasher.digest())
@@ -428,7 +428,7 @@ class MerkleUpdateCell(Cell):
                 hasher.update(c.hash(l + 1))
             depth = 0
             for c in self.refs:
-                depth = max(depth, c.depth(l) + 1)
+                depth = max(depth, c.depth(l + 1) + 1)
             if depth > Cell.MAX_DEPTH:
                 raise ValueError(f'Cell exceeded depth limit: {depth} > {Cell.MAX_DEPTH}')
             self.hashes.append(hasher.digest())
