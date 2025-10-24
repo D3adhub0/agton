@@ -38,9 +38,9 @@ class Message(TlbConstructor):
         if has_init:
             init_in_ref = s.load_bit()
             if init_in_ref:
-                init = s.load_tlb(StateInit)
-            else:
                 init = StateInit.from_cell(s.load_ref())
+            else:
+                init = s.load_tlb(StateInit)
         else:
             init = None
         body_in_ref = s.load_bit()
