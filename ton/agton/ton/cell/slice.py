@@ -4,10 +4,10 @@ from bitarray import frozenbitarray
 from bitarray.util import ba2int
 from typing import Self, Literal, Callable, cast, TYPE_CHECKING
 
-from agton.ton.common.bitstring import BitString
+from agton.ton.common.bitstring import BitString, int2bs
 
 
-from .cell import Cell
+from .cell import Cell, OrdinaryCell
 from .exceptions import CellOverflow, CellUnderflow
 
 if TYPE_CHECKING:
@@ -26,11 +26,10 @@ class Slice:
         if not (ld <= rd <= len(c.data) and lr <= rr <= len(c.refs)):
             raise ValueError('Invalid cursors')
     
-    def to_cell(self) -> Cell:
-        return Cell(
+    def to_cell(self) -> OrdinaryCell:
+        return OrdinaryCell(
             data=frozenbitarray(self.c.data[self.ld:self.rd]),
-            refs=self.c.refs[self.lr:self.rr],
-            special=False
+            refs=self.c.refs[self.lr:self.rr]
         )
     
     @property
@@ -70,21 +69,23 @@ class Slice:
         self.ld += n
         return BitString(self.c.data[self.ld - n:self.ld])
     
-    def starts_with(self, b: BitString) -> bool:
-        n = len(b)
+    def starts_with(self, p: BitString | tuple[int, int]) -> bool:
+        if isinstance(p, tuple):
+            p = int2bs(p[0], p[1])
+        n = len(p)
         if n > self.remaining_bits:
             return False
-        return self.preload_bits(n) == b
+        return self.preload_bits(n) == p
 
     def skip_bits(self, n: int) -> Self:
         self._ensure_bits_cap(n)
         self.ld += n
         return self
 
-    def skip_prefix(self, b: BitString):
-        n = len(b)
-        if not self.starts_with(b):
+    def skip_prefix(self, p: BitString | tuple[int, int]):
+        if not self.starts_with(p):
             raise ValueError('Wrong prefix')
+        n = p[1] if isinstance(p, tuple) else len(p)
         self.skip_bits(n)
 
     def preload_ref(self) -> Cell:
@@ -232,9 +233,12 @@ class Slice:
         from ..types.msg_address import msg_address_int
         return self.load_tlb(msg_address_int)
     
-    def load_cell(self) -> Cell:
+    def load_cell(self) -> OrdinaryCell:
         '''Use this to load the remaining bits and refs as Cell'''
-        c = Cell(frozenbitarray(self.c.data[self.ld:self.rd]), self.c.refs[self.lr:self.rr])
+        c = OrdinaryCell(
+            data=frozenbitarray(self.c.data[self.ld:self.rd]),
+            refs=self.c.refs[self.lr:self.rr]
+        )
         self.ld = self.rd
         self.lr = self.rr
         return c

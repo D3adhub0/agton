@@ -5,7 +5,7 @@ from typing import Self, Iterable, overload, TYPE_CHECKING
 from bitarray import bitarray, frozenbitarray
 from bitarray.util import int2ba
 
-from .cell import Cell
+from .cell import Cell, OrdinaryCell
 from .exceptions import CellOverflow
 
 if TYPE_CHECKING:
@@ -31,8 +31,8 @@ class Builder:
     def remaining_refs(self):
         return MAX_REFS - len(self.refs)
     
-    def end_cell(self) -> Cell:
-        return Cell(frozenbitarray(self.data), self.refs)
+    def end_cell(self) -> OrdinaryCell:
+        return OrdinaryCell(frozenbitarray(self.data), self.refs)
     
     def to_cell(self) -> Cell:
         return self.end_cell()

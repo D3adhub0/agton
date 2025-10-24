@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Self, Iterable, TYPE_CHECKING
 from bitarray import bitarray, frozenbitarray
@@ -15,108 +15,33 @@ if TYPE_CHECKING:
     from .slice import Slice
     from .builder import Builder
 
-MAX_BITS: int = 1023
-MAX_REFS: int = 4
+class Cell(ABC):
+    MAX_BITS: int = 1023
+    MAX_REFS: int = 4
+    MAX_DEPTH: int = 1023
 
-class CellType(Enum):
-    ordinary = -1
-    pruned_branch = 1
-    library_ref = 2
-    merkle_proof = 3
-    merkle_update = 4
-
-
-class LevelMask(int):
-    def __new__(cls, value: int):
-        return super().__new__(cls, value)
-    
-    def level(self) -> int:
-        return self.bit_length()
-    
-    def hash_index(self) -> int:
-        return self.bit_count()
-    
-    def hashes_count(self) -> int:
-        return self.hash_index() + 1
-    
-    def apply(self, level: int) -> LevelMask:
-        return LevelMask(self & ((1 << level) - 1))
-    
-    def is_significant(self, level: int) -> bool:
-        if level == 0:
-            return True
-        return bool(self >> (level - 1) & 1)
-
-
-class Cell:
     def __init__(self,
                  data: BitString,
-                 refs: Iterable[Self] = (),
+                 refs: Iterable[Cell] = (),
                  special: bool = False) -> None:
         self.data = data
         self.refs = tuple(refs)
         self.special = special
-
-        self.type = self._get_type_and_check()
-        self.level_mask = self._get_mask()
-
-        self._depthes: list[int] = []
-        self._hashes: list[bytes] = []
-        self._calculate_hashes_and_depthes()
-
-    def _get_type_and_check(self) -> CellType:
-        if not self.special:
-            if len(self.refs) > MAX_REFS:
-                raise ValueError(f"Ordinary cell can have at most {MAX_REFS} references, got {len(self.refs)}")
-            if len(self.data) > MAX_BITS:
-                raise ValueError(f"Ordinary cell can have at most {MAX_BITS} bits in data, got {len(self.data)}")
-            return CellType.ordinary
-        else:
-            if len(self.data) < 8:
-                raise ValueError(f"Special cell must have at least 8 bits in data")
-            t = ba2int(self.data[:8])
-            if t == CellType.pruned_branch.value:
-                m = ba2int(self.data[8:16])
-                h = m.bit_count()
-                if not (1 <= m <= 7 and 
-                        len(self.refs) == 0 and 
-                        len(self.data) == 16 + 8 * (h * 32 + h * 2)):
-                    raise ValueError(f"Pruned branch is invalid")
-                return CellType.pruned_branch
-            elif t == CellType.library_ref.value:
-                if not (len(self.refs) == 0 and len(self.data) == 8 + 256):
-                    raise ValueError(f"Library cell is invalid")
-                return CellType.library_ref
-            elif t == CellType.merkle_proof.value:
-                if not (len(self.refs) == 1 and len(self.data) == 280):
-                    raise ValueError(f"Merkle proof cell is invalid")
-                return CellType.merkle_proof
-            elif t == CellType.merkle_update.value:
-                if not (len(self.refs) == 2 and len(self.data) == 552):
-                    raise ValueError(f"Merkle update cell is invalid")
-                return CellType.merkle_update
-            else:
-                raise ValueError(f"Unknown cell type: {t}")
+        if len(self.refs) > Cell.MAX_REFS:
+                raise ValueError(f"Cell can have at most {Cell.MAX_REFS} references, got {len(self.refs)}")
+        if len(self.data) > Cell.MAX_BITS:
+            raise ValueError(f"Cell can have at most {Cell.MAX_BITS} bits in data, got {len(self.data)}")
     
-    def _get_mask(self) -> LevelMask:
-        if self.type == CellType.ordinary:
-            m = 0
-            for c in self.refs:
-                m |= c.level_mask
-            return LevelMask(m)
-        elif self.type == CellType.pruned_branch:
-            return LevelMask(ba2int(self.data[8:16]))
-        elif self.type == CellType.merkle_proof:
-            return LevelMask(self.refs[0].level_mask >> 1)
-        elif self.type == CellType.merkle_update:
-            return LevelMask((self.refs[0].level_mask | self.refs[1].level_mask) >> 1)
-        elif self.type == CellType.library_ref:
-            return LevelMask(0)
-        else:
-            assert False
+    @property
+    @abstractmethod
+    def level(self) -> int: ...
+
+    @classmethod
+    def empty(cls) -> OrdinaryCell:
+        return OrdinaryCell(data=frozenbitarray(), refs=())
     
-    def _get_refs_descriptor(self, level_mask: LevelMask) -> bytes:
-        d = len(self.refs) + 8 * self.special + 32 * level_mask.level()
+    def _get_refs_descriptor(self, level: int = 0) -> bytes:
+        d = len(self.refs) + 8 * self.special + 32 * level
         return d.to_bytes(1, 'big')
 
     def _get_bits_descriptor(self) -> bytes:
@@ -124,79 +49,8 @@ class Cell:
         d = b // 8 + (b + 7) // 8
         return d.to_bytes(1, 'big')
 
-    def _get_descriptors(self, level_mask: LevelMask = LevelMask(0)) -> bytes:
-        return self._get_refs_descriptor(level_mask) + self._get_bits_descriptor()
-
-    def depth(self, level: int | None = None) -> int:
-        if level is None:
-            level = self.level_mask.level()
-        hash_index = self.level_mask.apply(level).hash_index()
-        if self.type == CellType.pruned_branch:
-            pruned_hash_index = self.level_mask.hash_index()
-            if hash_index != pruned_hash_index:
-                off = 2 + 32 * pruned_hash_index + hash_index * 2
-                return int.from_bytes(self._get_data_bytes()[off: off + 2], 'big')
-            hash_index = 0
-        return self._depthes[hash_index]
-
-    def hash(self, level: int | None = None) -> bytes:
-        if level is None:
-            level = self.level_mask.level()
-        hash_index = self.level_mask.apply(level).hash_index()
-        if self.type == CellType.pruned_branch:
-            pruned_hash_index = self.level_mask.hash_index()
-            if hash_index != pruned_hash_index:
-                return self._get_data_bytes()[2 + (hash_index * 32): 2 + ((hash_index + 1) * 32)]
-            hash_index = 0
-        return self._hashes[hash_index]
-    
-    def _calculate_hashes_and_depthes(self) -> None:
-        total_hash_count = self.level_mask.hashes_count()
-        hash_count = total_hash_count
-        if self.type == CellType.pruned_branch:
-            hash_count = 1
-        hash_index_offset = total_hash_count - hash_count
-        hash_index = 0
-        level = self.level_mask.level()
-        for li in range(0, level + 1):
-            if not self.level_mask.is_significant(li):
-                continue
-            if li < hash_index_offset:
-                hash_index += 1
-                continue
-            dsc = self._get_descriptors(self.level_mask.apply(li))
-            hasher = sha256(dsc)
-            if hash_index == hash_index_offset:
-                if li != 0 and self.type != CellType.pruned_branch:
-                    raise ValueError('not pruned or 0')
-                data = self._get_data_bytes()
-                hasher.update(data)
-            else:
-                if li == 0 or self.type == CellType.pruned_branch:
-                    raise ValueError('not pruned or 0')
-                off = hash_index - hash_index_offset - 1
-                hasher.update(self._hashes[off])
-            depth = 0
-            for r in self.refs:
-                if self.type in (CellType.merkle_proof, CellType.merkle_update):
-                    ref_depth = r.depth(li + 1)
-                else:
-                    ref_depth = r.depth(li)
-                depth_bytes = ref_depth.to_bytes(2, 'big')
-                hasher.update(depth_bytes)
-                depth = max(depth, ref_depth + 1)
-
-            if depth >= 1024:
-                raise ValueError('depth is more than max depth')
-            for r in self.refs:
-                if self.type in (CellType.merkle_proof, CellType.merkle_update):
-                    hasher.update(r.hash(li + 1))
-                else:
-                    hasher.update(r.hash(li))
-            off = hash_index - hash_index_offset
-            self._depthes.append(depth)
-            self._hashes.append(hasher.digest())
-            hash_index += 1
+    def _get_descriptors(self, level: int = 0) -> bytes:
+        return self._get_refs_descriptor(level) + self._get_bits_descriptor()
 
     def _get_data_bytes(self) -> bytes:
         result = bitarray(self.data)
@@ -205,9 +59,21 @@ class Cell:
             result.fill()
         return result.tobytes()
 
-    @classmethod
-    def empty(cls) -> Cell:
-        return cls(data=frozenbitarray(), refs=(), special=False)
+    @abstractmethod
+    def _depth(self, level: int) -> int: ...
+
+    def depth(self, level: int | None = None) -> int:
+        if level is None:
+            level = self.level
+        return self._depth(level)
+
+    @abstractmethod
+    def _hash(self, level: int) -> bytes: ...
+
+    def hash(self, level: int | None = None) -> bytes:
+        if level is None:
+            level = self.level
+        return self._hash(level)
 
     def to_boc(self, 
                with_crc=False,
@@ -252,20 +118,13 @@ class Cell:
     def verify(self, signature: bytes, public_key: bytes) -> bool:
         return verify(self.hash(), signature, public_key)
 
-    def _type_description(self):
-        desc = ''
-        if self.type == CellType.pruned_branch:
-            desc = '* Prunned Branch '
-        elif self.type == CellType.merkle_proof:
-            desc = '* Merkle Proof '
-        elif self.type == CellType.merkle_update:
-            desc = '* Merkle Update '
-        elif self.type == CellType.library_ref:
-            desc = '* Library Ref '
-        return desc
+    @abstractmethod
+    def _type_name(self) -> str: ...
 
     def dump(self, d: int = 0, comma: bool = False) -> str:
-        desc = self._type_description()
+        desc = ''
+        if self.special:
+            desc = f'* {self._type_name()} '
         data = f'{len(self.data)}[{self.data.tobytes().hex().upper()}]'
         refs = ''
         if self.refs:
@@ -285,8 +144,309 @@ class Cell:
         return self.hash() == other.hash()
 
     def __repr__(self) -> str:
-        desc = self._type_description()
-        return f"Cell({desc}{len(self.data)}[{self.data.tobytes().hex().upper()}] -> {len(self.refs)} refs)"
+        desc = self._type_name()
+        if self.special:
+            desc = '* ' + desc
+        return f"Cell({desc} {len(self.data)}[{self.data.tobytes().hex().upper()}] -> {len(self.refs)} refs)"
 
     def __str__(self) -> str:
         return self.dump()
+
+
+class OrdinaryCell(Cell):
+    def __init__(self,
+                 data: frozenbitarray,
+                 refs: Iterable[Cell] = ()) -> None:
+        super().__init__(data, refs, False)
+
+        self._level = 0
+        for c in self.refs:
+            self._level = max(self._level, c.level)
+
+        self.depths: list[int] = []
+        self.hashes: list[bytes] = []
+        for l in range(self.level + 1):
+            hasher = sha256()
+            hasher.update(self._get_descriptors(l))
+            hasher.update(self._get_data_bytes() if l == 0 else self.hashes[-1])
+            for c in self.refs:
+                hasher.update(c.depth(l).to_bytes(2, 'big'))
+            for c in self.refs:
+                hasher.update(c.hash(l))
+            depth = 0
+            for c in self.refs:
+                depth = max(depth, c.depth(l) + 1)
+            if depth > Cell.MAX_DEPTH:
+                raise ValueError(f'Cell exceeded depth limit: {depth} > {Cell.MAX_DEPTH}')
+            self.hashes.append(hasher.digest())
+            self.depths.append(depth)
+
+    @property
+    def level(self) -> int:
+        return self._level
+
+    def _depth(self, level: int) -> int:
+        level = min(level, self.level)
+        return self.depths[level]
+
+    def _hash(self, level: int) -> bytes:
+        level = min(level, self.level)
+        return self.hashes[level]
+
+    def _type_name(self) -> str:
+        return 'Ordinary'
+
+
+class PrunedBranchCell(Cell):
+    TAG = 1
+    def __init__(self, hashes: Iterable[bytes], depths: Iterable[int]) -> None:
+        hashes = tuple(hashes)
+        depths = tuple(depths)
+        
+        self._level = len(hashes)
+        if not (1 <= self._level <= 3):
+            raise ValueError('Invalid level')
+        if len(hashes) != self._level:
+            raise ValueError('Hashes count should be equal to level')
+        if len(depths) != self._level:
+            raise ValueError('Depths count should be equal to level')
+        
+        from .builder import begin_cell
+        b = (
+            begin_cell()
+            .store_uint(PrunedBranchCell.TAG, 8)
+            .store_uint((1 << self.level) - 1, 8)
+        )
+        for h in hashes:
+            b.store_bytes(h)
+        for d in depths:
+            b.store_uint(d, 16)
+        super().__init__(BitString(b.data), [], True)
+        hasher = sha256()
+        hasher.update(self._get_descriptors(self._level))
+        hasher.update(self._get_data_bytes())
+        self.hashes = hashes + (hasher.digest(),)
+        self.depths = depths + (0,)
+    
+    @classmethod
+    def from_ordinary_cell(cls, c: Cell) -> Self:
+        s = c.begin_parse()
+        s.skip_prefix((PrunedBranchCell.TAG, 8))
+        mask = s.load_uint(8)
+        level = mask.bit_length()
+        assert mask.bit_count() == level, 'This is too exotic'
+        hashes = []
+        depths = []
+        for _ in range(level):
+            hashes.append(s.load_bytes(32))
+        for _ in range(level):
+            depths.append(s.load_uint(16))
+        s.end_parse()
+        return cls(hashes, depths)
+
+    @property
+    def level(self) -> int:
+        return self._level
+
+    def _depth(self, level: int) -> int:
+        level = min(level, self.level)
+        return self.depths[level]
+
+    def _hash(self, level: int) -> bytes:
+        level = min(level, self.level)
+        return self.hashes[level]
+
+    def _type_name(self) -> str:
+        return 'Pruned Branch'
+
+
+class LibraryRefCell(Cell):
+    TAG = 2
+    def __init__(self, library_hash: bytes) -> None:
+        self.library_hash = library_hash
+        self._level = 0
+
+        if len(library_hash) != 32:
+            raise ValueError('Library hash should be 32 bytes')
+        
+        from .builder import begin_cell
+        b = (
+            begin_cell()
+            .store_uint(LibraryRefCell.TAG, 8)
+            .store_bytes(library_hash)
+        )
+        super().__init__(BitString(b.data), [], True)
+        hasher = sha256()
+        hasher.update(self._get_descriptors(self._level))
+        hasher.update(self._get_data_bytes())
+        self.hashes = [hasher.digest()]
+        self.depths = [0]
+
+    @classmethod
+    def from_ordinary_cell(cls, c: Cell) -> Self:
+        s = c.begin_parse()
+        s.skip_prefix((LibraryRefCell.TAG, 8))
+        library_hash = s.load_bytes(32)
+        s.end_parse()
+        return cls(library_hash)
+
+    @property
+    def level(self) -> int:
+        return self._level
+
+    def _depth(self, level: int) -> int:
+        level = min(level, self.level)
+        return self.depths[level]
+
+    def _hash(self, level: int) -> bytes:
+        level = min(level, self.level)
+        return self.hashes[level]
+
+    def _type_name(self) -> str:
+        return 'Library Ref'
+
+
+class MerkleProofCell(Cell):
+    TAG = 3
+    def __init__(self,
+                 virtual_hash: bytes,
+                 virtual_depth: int,
+                 virtual_root: Cell) -> None:
+        
+        if len(virtual_hash) != 32:
+            raise ValueError('Virtual hash should be 32 bytes')
+        
+        self.virtual_hash = virtual_hash
+        self.virtual_depth = virtual_depth
+        self.virtual_root = virtual_root
+
+        self._level = max(virtual_root.level - 1, 0)
+
+        from .builder import begin_cell
+        b = (
+            begin_cell()
+            .store_uint(MerkleProofCell.TAG, 8)
+            .store_bytes(self.virtual_hash)
+            .store_uint(self.virtual_depth, 16)
+        )
+        super().__init__(BitString(b.data), [self.virtual_root], True)
+        self.depths: list[int] = []
+        self.hashes: list[bytes] = []
+        for l in range(self.level + 1):
+            hasher = sha256()
+            hasher.update(self._get_descriptors(l))
+            hasher.update(self._get_data_bytes() if l == 0 else self.hashes[-1])
+            for c in self.refs:
+                hasher.update(c.depth(l + 1).to_bytes(2, 'big'))
+            for c in self.refs:
+                hasher.update(c.hash(l + 1))
+            depth = 0
+            for c in self.refs:
+                depth = max(depth, c.depth(l) + 1)
+            if depth > Cell.MAX_DEPTH:
+                raise ValueError(f'Cell exceeded depth limit: {depth} > {Cell.MAX_DEPTH}')
+            self.hashes.append(hasher.digest())
+            self.depths.append(depth)
+
+    @classmethod
+    def from_ordinary_cell(cls, c: Cell) -> Self:
+        s = c.begin_parse()
+        s.skip_prefix((MerkleProofCell.TAG, 8))
+        virtual_hash = s.load_bytes(32)
+        virtual_depth = s.load_uint(16)
+        virtual_root = s.load_ref()
+        s.end_parse()
+        return cls(virtual_hash, virtual_depth, virtual_root)
+
+    @property
+    def level(self) -> int:
+        return self._level
+
+    def _depth(self, level: int) -> int:
+        level = min(level, self.level)
+        return self.depths[level]
+
+    def _hash(self, level: int) -> bytes:
+        level = min(level, self.level)
+        return self.hashes[level]
+
+    def _type_name(self) -> str:
+        return 'Merkle Proof'
+
+
+class MerkleUpdateCell(Cell):
+    TAG = 4
+    def __init__(self,
+                 old_hash: bytes,
+                 new_hash: bytes,
+                 old_depth: int,
+                 new_depth: int,
+                 old: Cell,
+                 new: Cell) -> None:
+        if not (len(old_hash) == len(new_hash) == 32):
+            raise ValueError('Hashes should be 32 bytes')
+        
+        self.old_hash = old_hash
+        self.new_hash = new_hash
+        self.old_depth = old_depth
+        self.new_depth = new_depth
+        self.old = old
+        self.new = new
+
+        self._level = max(self.old.level - 1, self.new.level - 1, 0)
+
+        from .builder import begin_cell
+        b = (
+            begin_cell()
+            .store_uint(MerkleUpdateCell.TAG, 8)
+            .store_bytes(self.old_hash)
+            .store_bytes(self.new_hash)
+            .store_uint(self.old_depth, 16)
+            .store_uint(self.new_depth, 16)
+        )
+        super().__init__(BitString(b.data), [self.old, self.new], True)
+        self.depths: list[int] = []
+        self.hashes: list[bytes] = []
+        for l in range(self.level + 1):
+            hasher = sha256()
+            hasher.update(self._get_descriptors(l))
+            hasher.update(self._get_data_bytes() if l == 0 else self.hashes[-1])
+            for c in self.refs:
+                hasher.update(c.depth(l + 1).to_bytes(2, 'big'))
+            for c in self.refs:
+                hasher.update(c.hash(l + 1))
+            depth = 0
+            for c in self.refs:
+                depth = max(depth, c.depth(l) + 1)
+            if depth > Cell.MAX_DEPTH:
+                raise ValueError(f'Cell exceeded depth limit: {depth} > {Cell.MAX_DEPTH}')
+            self.hashes.append(hasher.digest())
+            self.depths.append(depth)
+
+    @classmethod
+    def from_ordinary_cell(cls, c: Cell) -> Self:
+        s = c.begin_parse()
+        s.skip_prefix((MerkleUpdateCell.TAG, 8))
+        old_hash = s.load_bytes(32)
+        new_hash = s.load_bytes(32)
+        old_depth = s.load_uint(16)
+        new_depth = s.load_uint(16)
+        old = s.load_ref()
+        new = s.load_ref()
+        s.end_parse()
+        return cls(old_hash, new_hash, old_depth, new_depth, old, new)
+
+    @property
+    def level(self) -> int:
+        return self._level
+
+    def _depth(self, level: int) -> int:
+        level = min(level, self.level)
+        return self.depths[level]
+
+    def _hash(self, level: int) -> bytes:
+        level = min(level, self.level)
+        return self.hashes[level]
+
+    def _type_name(self) -> str:
+        return 'Merkle Update'

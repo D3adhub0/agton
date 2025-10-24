@@ -6,7 +6,7 @@ from ..common import BitString, int2bs, bs2int
 
 from ..cell import Slice
 from ..cell import Builder, begin_cell
-from ..cell import Cell
+from ..cell import Cell, OrdinaryCell
 
 from .msg_address import MsgAddress, Address, msg_address
 
@@ -238,5 +238,5 @@ class HashmapCodec[K, V]:
         def k_se(a: Address) -> BitString:
             return begin_cell().store_address(a).to_cell().data
         def k_de(b: BitString) -> Address:
-            return Cell(b).begin_parse().load_address()
+            return OrdinaryCell(b).begin_parse().load_address()
         return HashmapCodec(k_de, k_se, self.v_de, self.v_se)

@@ -1,6 +1,7 @@
 import pytest
 
 from agton.ton import Cell, begin_cell
+from agton.ton.cell import OrdinaryCell
 from agton.ton.common import BitString
 
 def test_traversal():
@@ -12,11 +13,11 @@ def test_traversal():
             ans += count_bits(r)
         return ans
     
-    c = Cell(
+    c = OrdinaryCell(
         BitString('001' * 3),
         refs=[
-            Cell(BitString('0110'), []),
-            Cell(BitString('01011110'), [])
+            OrdinaryCell(BitString('0110'), []),
+            OrdinaryCell(BitString('01011110'), [])
         ]
     )
     assert count_bits(c) == 3 + 2 + 5
@@ -28,9 +29,9 @@ def test_rhombus():
     #  \ /
     #   d
     d = Cell.empty()
-    b = Cell(BitString('0'), [d])
-    c = Cell(BitString('1'), [d])
-    a = Cell(BitString(''), [b, c])
+    b = OrdinaryCell(BitString('0'), [d])
+    c = OrdinaryCell(BitString('1'), [d])
+    a = OrdinaryCell(BitString(''), [b, c])
     
     cs = a.begin_parse()
     d1 = cs.load_ref().begin_parse().load_ref()
@@ -117,16 +118,16 @@ def test_storing_loading_uint(v: int, n: int, should_raise: bool):
 def test_depth_limit():
     c = Cell.empty()
     for _ in range(1023):
-        c = Cell(BitString(), refs=[c])
+        c = OrdinaryCell(BitString(), refs=[c])
     with pytest.raises(Exception):
-        c = Cell(BitString(), refs=[c])
+        c = OrdinaryCell(BitString(), refs=[c])
 
 def test_data_limit():
-    Cell(BitString('0' * 1023), [])
+    OrdinaryCell(BitString('0' * 1023), [])
     with pytest.raises(Exception):
-        Cell(BitString('0' * 1024), [])
+        OrdinaryCell(BitString('0' * 1024), [])
 
 def test_refs_limit():
-    Cell(BitString('0'), [Cell.empty()] * 4)
+    OrdinaryCell(BitString('0'), [Cell.empty()] * 4)
     with pytest.raises(Exception):
-        Cell(BitString('0'), [Cell.empty()] * 5)
+        OrdinaryCell(BitString('0'), [Cell.empty()] * 5)

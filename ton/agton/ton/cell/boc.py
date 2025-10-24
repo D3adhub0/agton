@@ -3,6 +3,7 @@ from typing import Sequence, Iterable
 from bitarray import frozenbitarray, bitarray
 
 from agton.ton import Cell
+from agton.ton.cell import OrdinaryCell, PrunedBranchCell, LibraryRefCell, MerkleProofCell, MerkleUpdateCell
 from agton.ton.crypto import crc32c
 from agton.ton.common import BytesParser
 
@@ -74,7 +75,16 @@ class UnresolvedCell:
         refs = tuple(refs)
         if len(self.refs) != len(refs):
             raise ValueError(f'Invalid resolving, expected {len(self.refs)} refs, but {len(refs)} given')
-        return Cell(self.data, refs, self.special)
+        c = OrdinaryCell(self.data, refs)
+        if self.special:
+            tag = c.begin_parse().load_uint(8)
+            match tag:
+                case PrunedBranchCell.TAG: return PrunedBranchCell.from_ordinary_cell(c)
+                case LibraryRefCell.TAG: return LibraryRefCell.from_ordinary_cell(c)
+                case MerkleProofCell.TAG: return MerkleProofCell.from_ordinary_cell(c)
+                case MerkleUpdateCell.TAG: return MerkleUpdateCell.from_ordinary_cell(c)
+                case _: raise ValueError('Unknown tag for exotic cell: {tag:02x}')
+        return c
 
 def decode(boc: bytes) -> list[Cell]:
     parser = BytesParser(boc)
