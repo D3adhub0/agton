@@ -155,10 +155,10 @@ class Cell(ABC):
         return self.hash() == other.hash()
 
     def __repr__(self) -> str:
-        desc = self._type_name()
+        desc = ''
         if self.special:
-            desc = '* ' + desc
-        return f"Cell({desc} {len(self.data)}[{self.data.tobytes().hex().upper()}] -> {len(self.refs)} refs)"
+            desc = '* ' + self._type_name()
+        return f"Cell({desc}{len(self.data)}[{self.data.tobytes().hex().upper()}] -> {len(self.refs)} refs)"
 
     def __str__(self) -> str:
         return self.dump()
