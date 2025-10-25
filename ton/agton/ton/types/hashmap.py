@@ -322,6 +322,15 @@ class HashmapCodec[K, V]:
             return bs2int(b, signed=False)
         return HashmapCodec(k_de, k_se, self.v_de, self.v_se, self.value_in_ref)
     
+    def with_bytes_keys(self, n: int) -> HashmapCodec[bytes, V]:
+        def k_se(b: bytes) -> BitString:
+            if len(b) != n:
+                raise ValueError(f'Bytes length is {len(b)}, but {n} expected')
+            return begin_cell().store_bytes(b).to_cell().data
+        def k_de(b: BitString) -> bytes:
+            return b.tobytes()
+        return HashmapCodec(k_de, k_se, self.v_de, self.v_se, self.value_in_ref)
+    
     def with_address_keys(self) -> HashmapCodec[Address, V]:
         def k_se(a: Address) -> BitString:
             return begin_cell().store_address(a).to_cell().data
