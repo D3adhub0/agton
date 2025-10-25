@@ -254,3 +254,8 @@ class Slice:
     def __str__(self) -> str:
         c = self.to_cell()
         return str(c)
+    
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, Slice):
+            return False
+        return self.to_cell() == value.to_cell()
