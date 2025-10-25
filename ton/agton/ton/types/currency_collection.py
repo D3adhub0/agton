@@ -22,7 +22,7 @@ class ExtraCurrencyCollection(TlbConstructor):
         return None
 
     def serialize_fields(self, b: Builder) -> Builder:
-        return b.store_hashmap_e(self.dict)
+        return b.store_hashmap_e(self.dict, 32)
 
     @classmethod
     def deserialize_fields(cls, s: Slice) -> Self:

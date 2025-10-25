@@ -118,17 +118,18 @@ class Builder:
     def store_snake_string(self, s: str) -> Self:
         return self.store_snake_bytes(s.encode())
     
-    def store_hashmap(self, h: Hashmap) -> Self:
+    def store_hashmap(self, h: Hashmap, n: int) -> Self:
         from ..types.hashmap import store_hashmap
-        store_hashmap(self, h)
+        store_hashmap(self, h, n)
         return self
     
-    def store_hashmap_e(self, h: HashmapE) -> Self:
+    def store_hashmap_e(self, h: HashmapE, n: int) -> Self:
+        self.store_bool(h is not None)
         if h is None:
-            self.store_bit(0)
             return self
-        return self.store_hashmap(h)
-    
+        d = begin_cell().store_hashmap(h, n).end_cell()
+        return self.store_ref(d)
+
     def store_tlb(self, o: TlbConstructor) -> Builder:
         return o.serialize(self)
     
