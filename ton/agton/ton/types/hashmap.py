@@ -256,6 +256,13 @@ class HashmapCodec[K, V]:
         hashmap = Hashmap.from_dict(cd)
         return hashmap
     
+    def with_bool_values(self) -> HashmapCodec[K, bool]:
+        def v_se(v: bool) -> Slice:
+            return begin_cell().store_bool(v).to_slice()
+        def v_de(s: Slice) -> bool:
+            return s.load_bool()
+        return HashmapCodec(self.k_de, self.k_se, v_de, v_se, self.value_in_ref)
+    
     def with_int_values(self, n: int) -> HashmapCodec[K, int]:
         def v_se(v: int) -> Slice:
             return begin_cell().store_int(v, n).to_slice()
