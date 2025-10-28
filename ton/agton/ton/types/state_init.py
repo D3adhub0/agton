@@ -14,7 +14,7 @@ class TickTock(TlbConstructor):
     tock: bool
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     def serialize_fields(self, b: Builder) -> Builder:

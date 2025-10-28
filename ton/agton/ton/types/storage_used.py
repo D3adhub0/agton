@@ -11,7 +11,7 @@ class StorageUsed(TlbConstructor):
     bits: int
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     @classmethod

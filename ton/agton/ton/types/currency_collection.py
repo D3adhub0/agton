@@ -18,7 +18,7 @@ class ExtraCurrencyCollection(TlbConstructor):
     dict: HashmapE = None
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     def serialize_fields(self, b: Builder) -> Builder:
@@ -39,7 +39,7 @@ class CurrencyCollection(TlbConstructor):
     other: ExtraCurrencyCollection
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     def serialize_fields(self, b: Builder) -> Builder:

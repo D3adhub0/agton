@@ -10,7 +10,7 @@ class AccStatusUnchanged(TlbConstructor):
     '''acst_unchanged$0 = AccStatusChange;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b0, 1
 
     @classmethod
@@ -25,7 +25,7 @@ class AccStatusFrozen(TlbConstructor):
     '''acst_frozen$10 = AccStatusChange; '''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b10, 2
 
     @classmethod
@@ -40,7 +40,7 @@ class AccStatusDeleted(TlbConstructor):
     '''acst_deleted$11 = AccStatusChange;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b11, 2
 
     @classmethod

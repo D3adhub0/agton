@@ -20,7 +20,7 @@ class AddrNone(TlbConstructor):
     '''addr_none$00 = MsgAddressExt'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b00, 2
 
     def serialize_fields(self, b: Builder) -> Builder:
@@ -41,7 +41,7 @@ class AddrExtern(TlbConstructor):
     external_address: BitString
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b01, 2
     
     def serialize_fields(self, b: Builder) -> Builder:
@@ -65,7 +65,7 @@ class Anycast(TlbConstructor):
     rewrite_pfx: bitarray
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     def serialize_fields(self, b: Builder) -> Builder:
@@ -102,7 +102,7 @@ class AddrStd(TlbConstructor):
     anycast: Anycast | None = None
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b10, 2
 
     def serialize_fields(self, b: Builder) -> Builder:
@@ -218,7 +218,7 @@ class AddrVar(TlbConstructor):
     address: bitarray
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b11, 2
 
     def serialize_fields(self, b: Builder) -> Builder:

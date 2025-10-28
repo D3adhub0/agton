@@ -76,11 +76,11 @@ class Cell(ABC):
         return self._hash(level)
 
     def to_boc(self, 
-               with_crc=False,
-               with_index=False,
-               with_cache=False,
-               with_top_hash=False,
-               with_int_hashes=False) -> bytes:
+               with_crc: bool = False,
+               with_index: bool = False,
+               with_cache: bool = False,
+               with_top_hash: bool = False,
+               with_int_hashes: bool = False) -> bytes:
         from .boc import encode
         return encode([self], with_crc, with_index, with_cache, with_top_hash, with_int_hashes)
     
@@ -98,7 +98,7 @@ class Cell(ABC):
         from .slice import Slice
         return Slice(self, 0, len(self.data), 0, len(self.refs))
     
-    def to_slice(self):
+    def to_slice(self) -> Slice:
         return self.begin_parse()
     
     def to_builder(self) -> Builder:

@@ -11,7 +11,7 @@ from agton.ton.types.tvm_value import TvmValue
 class ToncenterError(Exception):
     pass
 
-def encode_tvm_value(v: TvmValue) -> dict:
+def encode_tvm_value(v: TvmValue) -> dict[str, str]:
     if isinstance(v, int):
         return {
             'type': 'num',
@@ -29,7 +29,7 @@ def encode_tvm_value(v: TvmValue) -> dict:
         }
     raise ToncenterError('Stack supports only int, Cell and Slice types')
 
-def decode_tvm_value(d: dict) -> TvmValue:
+def decode_tvm_value(d: dict[str, str]) -> TvmValue:
     type_ = d.get('type')
     value = d.get('value')
     if type_ is None:
@@ -83,8 +83,8 @@ class ToncenterClient(Provider, BaseApiClient):
             raise ToncenterError(f'Non zero exit code during get method: {c}')
         return tuple(decode_tvm_value(v) for v in s)
 
-    def raw_send_external_message(self, message: bytes):
+    def raw_send_external_message(self, message: bytes) -> None:
         data = {
             'boc': base64.b64encode(message).decode()
         }
-        return self.post('/message', json=data)
+        self.post('/message', json=data)

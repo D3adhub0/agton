@@ -19,7 +19,7 @@ class AccountStorage(TlbConstructor):
     state: AccountState
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     @classmethod

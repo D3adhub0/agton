@@ -13,7 +13,7 @@ account_frozen$01 state_hash:bits256 = AccountState;'''
 class UninitAccountState(TlbConstructor):
     '''account_uninit$00 = AccountState;'''
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b00, 2
 
     @classmethod
@@ -29,7 +29,7 @@ class ActiveAccountState(TlbConstructor):
     state_init: StateInit
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b1, 1
 
     @classmethod
@@ -46,7 +46,7 @@ class FrozenAccountState(TlbConstructor):
     state_hash: bytes
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b01, 2
 
     @classmethod

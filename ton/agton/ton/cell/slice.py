@@ -33,22 +33,22 @@ class Slice:
         )
     
     @property
-    def remaining_bits(self):
+    def remaining_bits(self) -> int:
         return self.rd - self.ld
     
     @property
-    def remaining_refs(self):
+    def remaining_refs(self) -> int:
         return self.rr - self.lr
 
-    def _ensure_bits_cap(self, n: int):
+    def _ensure_bits_cap(self, n: int) -> None:
         if n > self.remaining_bits:
             raise CellUnderflow(f'Tried to read {n} bits, when {self.remaining_bits} available')
     
-    def _ensure_refs_cap(self, n: int):
+    def _ensure_refs_cap(self, n: int) -> None:
         if n > self.remaining_refs:
             raise CellUnderflow(f'Tried to read {n} refs, when {self.remaining_refs} available')
     
-    def end_parse(self):
+    def end_parse(self) -> None:
         if not (self.lr == self.rr and self.ld == self.rd):
             raise CellOverflow('Expected no more data and refs, after .end_parse()')
     
@@ -82,7 +82,7 @@ class Slice:
         self.ld += n
         return self
 
-    def skip_prefix(self, p: BitString | tuple[int, int]):
+    def skip_prefix(self, p: BitString | tuple[int, int]) -> None:
         if not self.starts_with(p):
             raise ValueError('Wrong prefix')
         n = p[1] if isinstance(p, tuple) else len(p)

@@ -21,14 +21,14 @@ MAX_REFS: int = 4
 class Builder:
     def __init__(self) -> None:
         self.data = bitarray()
-        self.refs = []
+        self.refs: list[Cell] = []
     
     @property
-    def remaining_bits(self):
+    def remaining_bits(self) -> int:
         return MAX_BITS - len(self.data)
     
     @property
-    def remaining_refs(self):
+    def remaining_refs(self) -> int:
         return MAX_REFS - len(self.refs)
     
     def end_cell(self) -> OrdinaryCell:
@@ -40,11 +40,11 @@ class Builder:
     def to_slice(self) -> Slice:
         return self.to_cell().to_slice()
     
-    def _ensure_bits_cap(self, n: int):
+    def _ensure_bits_cap(self, n: int) -> None:
         if n > self.remaining_bits:
             raise CellOverflow(f"Can't store {n} more bits, only {self.remaining_bits} bits available")
     
-    def _ensure_refs_cap(self, n: int):
+    def _ensure_refs_cap(self, n: int) -> None:
         if n > self.remaining_refs:
             raise CellOverflow(f"Can't store {n} more refs, only {self.remaining_refs} refs available")
     
@@ -90,21 +90,21 @@ class Builder:
     def store_bool(self, b: bool) -> Self:
         return self.store_uint(b, 1)
     
-    def store_var_uint(self, v: int, n: int):
+    def store_var_uint(self, v: int, n: int) -> Self:
         bit_length = (n - 1).bit_length()
         if v == 0:
             return self.store_uint(0, bit_length)
         byte_length = (v.bit_length() + 7) // 8
         return self.store_uint(byte_length, bit_length).store_uint(v, byte_length * 8)
 
-    def store_var_int(self, v: int, n: int):
+    def store_var_int(self, v: int, n: int) -> Self:
         bit_length = (n - 1).bit_length()
         if v == 0:
             return self.store_uint(0, bit_length)
         byte_length = (v.bit_length() + 7) // 8
         return self.store_uint(byte_length, bit_length).store_int(v, byte_length * 8)
     
-    def store_coins(self, amount: int):
+    def store_coins(self, amount: int) -> Self:
         return self.store_var_uint(amount, 16)
     
     def store_snake_bytes(self, b: bytes) -> Self:

@@ -111,24 +111,24 @@ class BaseApiClient:
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(self, exc_type, exc, tb) -> None: # type: ignore
         self.close()
 
     # ---- verb helpers -----------------------------------------------------
 
-    def get(self, path: str, **kwargs) -> Any:
+    def get(self, path: str, **kwargs) -> Any: # type: ignore
         return self.request("GET", path, **kwargs)
 
-    def post(self, path: str, **kwargs) -> Any:
+    def post(self, path: str, **kwargs) -> Any: # type: ignore
         return self.request("POST", path, **kwargs)
 
-    def put(self, path: str, **kwargs) -> Any:
+    def put(self, path: str, **kwargs) -> Any: # type: ignore
         return self.request("PUT", path, **kwargs)
 
-    def patch(self, path: str, **kwargs) -> Any:
+    def patch(self, path: str, **kwargs) -> Any: # type: ignore
         return self.request("PATCH", path, **kwargs)
 
-    def delete(self, path: str, **kwargs) -> Any:
+    def delete(self, path: str, **kwargs) -> Any: # type: ignore
         return self.request("DELETE", path, **kwargs)
 
     # ---- core request -----------------------------------------------------

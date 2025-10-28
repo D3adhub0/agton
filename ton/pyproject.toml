@@ -32,5 +32,13 @@ all = [
 include = ["agton.ton*"]
 namespaces = true
 
+[tool.mypy]
+python_version = "3.12"
+namespace_packages = true
+explicit_package_bases = true
+implicit_reexport = true
+files = ["agton"]            # or: packages = ["agton"]
+strict = true                # optional
+
 [project.urls]
 Homepage = "https://github.com/gosunov/agton"

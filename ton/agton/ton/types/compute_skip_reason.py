@@ -10,7 +10,7 @@ class CSkipNoState(TlbConstructor):
     '''cskip_no_state$00 = ComputeSkipReason;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b00, 2
 
     @classmethod
@@ -25,7 +25,7 @@ class CSkipBadState(TlbConstructor):
     '''cskip_bad_state$01 = ComputeSkipReason;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b01, 2
 
     @classmethod
@@ -40,7 +40,7 @@ class CSkipNoGas(TlbConstructor):
     '''cskip_no_gas$10 = ComputeSkipReason;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b10, 2
 
     @classmethod
@@ -55,7 +55,7 @@ class CSkipSuspended(TlbConstructor):
     '''cskip_suspended$110 = ComputeSkipReason;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b110, 3
 
     @classmethod

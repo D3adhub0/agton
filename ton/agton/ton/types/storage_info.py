@@ -20,7 +20,7 @@ class StorageInfo(TlbConstructor):
     due_payment: int | None
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     @classmethod

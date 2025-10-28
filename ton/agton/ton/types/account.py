@@ -13,7 +13,7 @@ class AccountNone(TlbConstructor):
     '''account_none$0 = Account;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b0, 1
 
     @classmethod
@@ -34,7 +34,7 @@ class AccountOrdinary(TlbConstructor):
     storage: AccountStorage
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b1, 1
 
     @classmethod

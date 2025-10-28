@@ -10,17 +10,17 @@ from agton.ton.common import BytesParser
 BOC_MAGIC = b'\xb5\xee\x9c\x72'
 
 def encode(roots: Sequence[Cell],
-           with_crc=False,
-           with_index=False,
-           with_cache=False,
-           with_top_hash=False,
-           with_int_hashes=False) -> bytes:
+           with_crc: bool = False,
+           with_index: bool = False,
+           with_cache: bool = False,
+           with_top_hash: bool = False,
+           with_int_hashes: bool = False) -> bytes:
     if with_crc or with_index or with_cache or with_top_hash or with_int_hashes:
         raise NotImplementedError
 
     visited: set[Cell] = set()
     order: list[Cell] = []
-    def dfs(c: Cell):
+    def dfs(c: Cell) -> None:
         if c in visited:
             return
         visited.add(c)

@@ -12,10 +12,10 @@ class BytesParser:
         self.i += n
         return self.b[self.i - n:self.i]
     
-    def skip_bytes(self, n: int):
+    def skip_bytes(self, n: int) -> None:
         self.i += n
 
-    def expect(self, v: int | Iterable[int] | bytes):
+    def expect(self, v: int | Iterable[int] | bytes) -> None:
         if isinstance(v, int):
             v = [v]
         if not isinstance(v, bytes):
@@ -30,6 +30,6 @@ class BytesParser:
         b = self.load_bytes(byte_size)
         return int.from_bytes(b, 'big')
     
-    def end_parse(self):
+    def end_parse(self) -> None:
         if self.i != len(self.b):
             raise ValueError('Expected end of bytes')

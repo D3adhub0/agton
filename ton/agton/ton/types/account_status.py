@@ -10,7 +10,7 @@ class AccStateUninit(TlbConstructor):
     '''acc_state_uninit$00 = AccountStatus;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b00, 2
 
     @classmethod
@@ -25,7 +25,7 @@ class AccStateFrozen(TlbConstructor):
     '''acc_state_frozen$01 = AccountStatus;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b01, 2
 
     @classmethod
@@ -40,7 +40,7 @@ class AccStateActive(TlbConstructor):
     '''acc_state_active$10 = AccountStatus;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b10, 2
 
     @classmethod
@@ -55,7 +55,7 @@ class AccStateNonexist(TlbConstructor):
     '''acc_state_nonexist$11 = AccountStatus;'''
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b11, 2
 
     @classmethod

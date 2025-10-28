@@ -17,7 +17,7 @@ class ShardAccount(TlbConstructor):
     last_trans_lt: int
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> None:
         return None
 
     @classmethod

@@ -46,9 +46,11 @@ class Hashmap:
                 left = l.to_dict()
                 right = r.to_dict()
                 for k, v in left.items():
-                    d[self.label + BitString([0]) + k] = v
+                    label = BitString(self.label + BitString([0]) + k)
+                    d[label] = v
                 for k, v in right.items():
-                    d[self.label + BitString([1]) + k] = v
+                    label = BitString(self.label + BitString([1]) + k)
+                    d[label] = v
                 return d
 
     @classmethod
@@ -66,8 +68,8 @@ class Hashmap:
 
         keys = list(d.keys())
         if len(keys) == 1:
-            k = keys[0]
-            return Hashmap(k, Leaf(d[k]))
+            key = keys[0]
+            return Hashmap(key, Leaf(d[key]))
         k = lcp(keys)
         label = keys[0][:k]
 
@@ -105,7 +107,7 @@ def load_unary(s: Slice) -> int:
         ans += 1
     return ans
 
-def store_unary(b: Builder, n: int):
+def store_unary(b: Builder, n: int) -> None:
     for _ in range(n):
         b.store_bit(1)
     b.store_bit(0)
@@ -199,7 +201,7 @@ def load_node(s: Slice, n: int) -> Leaf | Fork:
     right = load_hashmap(s.load_ref().begin_parse(), n - 1)
     return Fork(left, right)
 
-def store_node(b: Builder, node: Leaf | Fork, n: int):
+def store_node(b: Builder, node: Leaf | Fork, n: int) -> None:
     match node:
         case Leaf(v):
             b.store_slice(v)

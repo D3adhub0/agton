@@ -1,7 +1,7 @@
-from typing import Literal
+from typing import Literal, ByteString
 
 
-def crc16(data: bytes):
+def crc16(data: ByteString) -> bytes:
     # feat. https://gist.github.com/oysstu/68072c44c02879a2abf94ef350d1c7c6?permalink_comment_id=3943460#gistcomment-3943460
 
     table = [
@@ -45,7 +45,7 @@ def crc16(data: bytes):
     return crc.to_bytes(2, 'big')
 
 
-def crc32c(data: bytes, byteorder: Literal['big', 'little'] = 'little'):
+def crc32c(data: ByteString, byteorder: Literal['big', 'little'] = 'little') -> bytes:
     # feat. https://web.mit.edu/freebsd/head/sys/libkern/crc32.c
 
     crc = 0xffffffff

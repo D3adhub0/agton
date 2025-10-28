@@ -29,8 +29,7 @@ def encode_tvm_value(v: TvmValue) -> str:
         # }
     raise ValueError('Stack supports only int, Cell and Slice types')
 
-def decode_tvm_value(d: dict) -> TvmValue:
-    print(d)
+def decode_tvm_value(d: dict[str, str]) -> TvmValue:
     type_ = d.get('type')
     value = d.get('value')
     if type_ is None:
@@ -90,8 +89,8 @@ class TonApiClient(Provider, BaseApiClient):
             raise ValueError(f'Non zero exit code during get method: {c}')
         return tuple(decode_tvm_value(v) for v in s)
 
-    def raw_send_external_message(self, message: bytes):
+    def raw_send_external_message(self, message: bytes) -> None:
         data = {
             'boc': message.hex()
         }
-        return self.post('/v2/blockchain/message', json=data)
+        self.post('/v2/blockchain/message', json=data)

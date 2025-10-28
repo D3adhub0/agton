@@ -32,7 +32,7 @@ class IntMsgInfoRelaxed(TlbConstructor):
     created_at: int
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b0, 1
 
     def serialize_fields(self, b: Builder) -> Builder:
@@ -78,7 +78,7 @@ class ExtOutInfoRelaxed(TlbConstructor):
     created_at: int
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b11, 2
 
     def serialize_fields(self, b: Builder) -> Builder:

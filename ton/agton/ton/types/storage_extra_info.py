@@ -8,7 +8,7 @@ from .tlb import TlbConstructor
 class StorageExtraNone(TlbConstructor):
     '''storage_extra_none$000 = StorageExtraInfo;'''
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b000, 3
 
     @classmethod
@@ -24,7 +24,7 @@ class StorageExtra(TlbConstructor):
     dict_hash: bytes
 
     @classmethod
-    def tag(cls):
+    def tag(cls) -> tuple[int, int]:
         return 0b001, 3
 
     @classmethod
